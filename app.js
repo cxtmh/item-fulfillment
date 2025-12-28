@@ -378,9 +378,10 @@ class UIController {
         const fulfillment = this.store.getFulfillment(id);
         if (!fulfillment) return;
 
-        document.getElementById('collection-item-name').textContent = fulfillment.itemName;
-        document.getElementById('collection-person-c').textContent = fulfillment.personC;
-        document.getElementById('collection-fulfillment-id').value = id;
+        // Show item info but don't pre-fill the ID - Person C must scan QR
+        document.getElementById('collection-item-display').textContent = fulfillment.itemName;
+        document.getElementById('collection-person-c-display').textContent = fulfillment.personC;
+        document.getElementById('collection-fulfillment-id').value = '';
         document.getElementById('collection-password').value = '';
         document.getElementById('collection-result').className = 'scanner-result';
         document.getElementById('collection-result').textContent = '';
@@ -398,26 +399,36 @@ class UIController {
     async handleCollectionSubmit(e) {
         e.preventDefault();
 
-        const id = document.getElementById('collection-fulfillment-id').value.trim();
+        const id = document.getElementById('collection-fulfillment-id').value.trim().toUpperCase();
         const password = document.getElementById('collection-password').value.trim();
 
+        // First check if fulfillment exists
+        const fulfillment = this.store.getFulfillment(id);
+        if (!fulfillment) {
+            const resultDiv = document.getElementById('collection-result');
+            resultDiv.className = 'scanner-result error';
+            resultDiv.innerHTML = `<strong>✗ Error:</strong> Fulfillment not found. Please scan the QR code.`;
+            return;
+        }
+
+        // Now validate with password
         const result = await this.store.validateAndCollect(id, password);
         const resultDiv = document.getElementById('collection-result');
 
         if (result.success) {
             resultDiv.className = 'scanner-result success';
             resultDiv.innerHTML = `
-                <strong>✓ Success!</strong><br>
-                ${result.message}<br>
-                <small>Item: ${this.escapeHtml(result.fulfillment.itemName)}</small>
+                <strong>✓ Authentication Successful!</strong><br>
+                Person C verified for: ${this.escapeHtml(result.fulfillment.itemName)}<br>
+                <small>Item collection confirmed</small>
             `;
 
             setTimeout(() => {
                 this.closeCollectionModal();
-            }, 2000);
+            }, 2500);
         } else {
             resultDiv.className = 'scanner-result error';
-            resultDiv.innerHTML = `<strong>✗ Error:</strong> ${result.message}`;
+            resultDiv.innerHTML = `<strong>✗ Authentication Failed:</strong> ${result.message}`;
         }
     }
 
@@ -442,25 +453,48 @@ class UIController {
         e.preventDefault();
 
         const code = document.getElementById('qr-code-input').value.trim().toUpperCase();
-        const result = this.store.updateStatusViaQR(code);
+        const fulfillment = this.store.getFulfillment(code);
 
-        const resultDiv = document.getElementById('scanner-result');
-
-        if (result.success) {
-            resultDiv.className = 'scanner-result success';
-            resultDiv.innerHTML = `
-                <strong>✓ Success!</strong><br>
-                ${result.message}<br>
-                <small>Item: ${this.escapeHtml(result.fulfillment.itemName)}</small>
-            `;
-
-            // Close scanner after 2 seconds
-            setTimeout(() => {
-                this.closeScannerModal();
-            }, 2000);
-        } else {
+        if (!fulfillment) {
+            const resultDiv = document.getElementById('scanner-result');
             resultDiv.className = 'scanner-result error';
-            resultDiv.innerHTML = `<strong>✗ Error:</strong> ${result.message}`;
+            resultDiv.innerHTML = `<strong>✗ Error:</strong> Fulfillment not found`;
+            return;
+        }
+
+        // Check if this is for drop-off or collection
+        if (fulfillment.status === 'pending') {
+            // Drop-off by Person B
+            const result = this.store.updateStatusViaQR(code);
+            const resultDiv = document.getElementById('scanner-result');
+
+            if (result.success) {
+                resultDiv.className = 'scanner-result success';
+                resultDiv.innerHTML = `
+                    <strong>✓ Success!</strong><br>
+                    ${result.message}<br>
+                    <small>Item: ${this.escapeHtml(result.fulfillment.itemName)}</small>
+                `;
+
+                setTimeout(() => {
+                    this.closeScannerModal();
+                }, 2000);
+            } else {
+                resultDiv.className = 'scanner-result error';
+                resultDiv.innerHTML = `<strong>✗ Error:</strong> ${result.message}`;
+            }
+        } else if (fulfillment.status === 'in-transit') {
+            // Collection by Person C - redirect to collection modal
+            this.closeScannerModal();
+            setTimeout(() => {
+                this.openCollectionModal(code);
+                // Pre-fill the fulfillment ID since they just scanned it
+                document.getElementById('collection-fulfillment-id').value = code;
+            }, 300);
+        } else {
+            const resultDiv = document.getElementById('scanner-result');
+            resultDiv.className = 'scanner-result error';
+            resultDiv.innerHTML = `<strong>✗ Error:</strong> This fulfillment is already completed`;
         }
     }
 
@@ -622,7 +656,8 @@ class UIController {
             }
             actions += '<button type="button" class="btn btn-primary" data-action="drop-off">Mark as Dropped Off</button>';
         } else if (fulfillment.status === 'in-transit') {
-            actions += '<button type="button" class="btn btn-primary" data-action="collect-item">Collect Item</button>';
+            // Person C must use the main "Scan QR" button to collect
+            actions += '<div class="collection-instruction">To collect this item, use the <strong>Scan QR</strong> button in the header and provide both the QR code and password.</div>';
         }
 
         return actions;
@@ -674,13 +709,6 @@ class UIController {
                 break;
             case 'drop-off':
                 this.store.updateStatus(id, 'in-transit');
-                break;
-            case 'collect-item':
-                this.closeDetailModal();
-                setTimeout(() => this.openCollectionModal(id), 300);
-                break;
-            case 'collect':
-                this.store.updateStatus(id, 'completed');
                 break;
             case 'delete':
                 if (confirm('Are you sure you want to delete this fulfillment?')) {

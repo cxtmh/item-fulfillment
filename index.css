@@ -821,6 +821,21 @@ body {
     margin-top: var(--spacing-sm) !important;
 }
 
+.collection-instruction {
+    background: var(--color-bg);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    margin-left: var(--spacing-md);
+}
+
+.collection-instruction strong {
+    color: var(--color-primary);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .header-content {
