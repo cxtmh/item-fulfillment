@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Item Fulfillment Tracker</title>
+    <meta name="description" content="Track item transfers between three parties with real-time status updates">
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    Item Fulfillment
+                </h1>
+                <div class="header-actions">
+                    <button id="scan-qr-btn" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M3 7V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H7M17 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V7M21 17V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H17M7 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V17M9 9H15V15H9V9Z"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Scan QR
+                    </button>
+                    <button id="new-fulfillment-btn" class="btn btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                        </svg>
+                        New Fulfillment
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div id="fulfillments-list" class="fulfillments-list">
+                <!-- Fulfillment cards will be inserted here -->
+            </div>
+
+            <div id="empty-state" class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <h2>No fulfillments yet</h2>
+                <p>Create your first item fulfillment to get started</p>
+                <button id="empty-new-btn" class="btn btn-primary">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    Create Fulfillment
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for creating new fulfillment -->
+    <div id="modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>New Fulfillment</h2>
+                <button id="close-modal-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <form id="fulfillment-form" class="form">
+                <div class="form-group">
+                    <label for="item-name">Item Name</label>
+                    <input type="text" id="item-name" required placeholder="e.g., Package, Document, Equipment">
+                </div>
+                <div class="form-group">
+                    <label for="person-a">Person A (Sender)</label>
+                    <input type="text" id="person-a" required placeholder="Name of sender">
+                </div>
+                <div class="form-group">
+                    <label for="person-b">Person B (Intermediary)</label>
+                    <input type="text" id="person-b" required placeholder="Name of intermediary">
+                </div>
+                <div class="form-group">
+                    <label for="person-c">Person C (Recipient)</label>
+                    <input type="text" id="person-c" required placeholder="Name of recipient">
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn btn-secondary">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Fulfillment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for fulfillment details -->
+    <div id="detail-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="detail-title">Fulfillment Details</h2>
+                <button id="close-detail-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div id="detail-content" class="detail-content">
+                <!-- Details will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for QR code -->
+    <div id="qr-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>QR Code for Drop-Off</h2>
+                <button id="close-qr-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="qr-content">
+                <div class="qr-info">
+                    <svg class="qr-info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M13 16H12V12H11M12 8H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p><strong id="qr-person-b">Person B</strong> should scan this QR code when receiving the item from
+                        <strong id="qr-person-a">Person A</strong>.
+                    </p>
+                    <p class="qr-warning">This QR code can only be used once.</p>
+                </div>
+                <div id="qr-code-container" class="qr-code-container"></div>
+                <div class="qr-actions">
+                    <button id="download-qr-btn" class="btn btn-secondary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M7 10L12 15M12 15L17 10M12 15V3"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Download QR Code
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for QR scanner -->
+    <div id="scanner-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Scan QR Code</h2>
+                <button id="close-scanner-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="scanner-content">
+                <div class="scanner-info">
+                    <p>Enter the fulfillment code from the QR code to confirm receipt:</p>
+                </div>
+                <form id="scanner-form" class="form">
+                    <div class="form-group">
+                        <label for="qr-code-input">Fulfillment Code</label>
+                        <input type="text" id="qr-code-input" required placeholder="e.g., FUL-XXXXX-XXXXX"
+                            style="text-transform: uppercase;">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancel-scanner-btn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Confirm Receipt</button>
+                    </div>
+                </form>
+                <div id="scanner-result" class="scanner-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for password display -->
+    <div id="password-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Collection Password</h2>
+                <button id="close-password-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="password-content">
+                <div class="password-info">
+                    <svg class="password-info-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 15V11M12 7H12.01M5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p><strong>Important:</strong> Share this password with <strong id="password-person-c">Person
+                            C</strong> so they can collect the item.</p>
+                    <p class="password-warning">This password is shown only once. Make sure to save it!</p>
+                </div>
+                <div class="password-display-container">
+                    <div class="password-label">Collection Password</div>
+                    <div class="password-display" id="password-display">000000</div>
+                    <div class="password-item">Item: <span id="password-item-name"></span></div>
+                </div>
+                <div class="password-actions">
+                    <button id="copy-password-btn" class="btn btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M8 5H6C5.46957 5 4.96086 5.21071 4.58579 5.58579C4.21071 5.96086 4 6.46957 4 7V19C4 19.5304 4.21071 20.0391 4.58579 20.4142C4.96086 20.7893 5.46957 21 6 21H18C18.5304 21 19.0391 20.7893 19.4142 20.4142C19.7893 20.0391 20 19.5304 20 19V7C20 6.46957 19.7893 5.96086 19.4142 5.58579C19.0391 5.21071 18.5304 5 18 5H16M8 5C8 5.53043 8.21071 6.03914 8.58579 6.41421C8.96086 6.78929 9.46957 7 10 7H14C14.5304 7 15.0391 6.78929 15.4142 6.41421C15.7893 6.03914 16 5.53043 16 5M8 5C8 4.46957 8.21071 3.96086 8.58579 3.58579C8.96086 3.21071 9.46957 3 10 3H14C14.5304 3 15.0391 3.21071 15.4142 3.58579C15.7893 3.96086 16 4.46957 16 5"
+                                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Copy Password
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for item collection -->
+    <div id="collection-modal" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Collect Item</h2>
+                <button id="close-collection-btn" class="close-btn">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="collection-content">
+                <div class="collection-info">
+                    <svg class="collection-info-icon" viewBox="0 0 24 24" fill="none"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <p><strong id="collection-person-c">Person C</strong> must provide the collection password to verify
+                        their identity.</p>
+                    <p class="collection-item-info">Item: <strong id="collection-item-name"></strong></p>
+                </div>
+                <form id="collection-form" class="form">
+                    <input type="hidden" id="collection-fulfillment-id">
+                    <div class="form-group">
+                        <label for="collection-password">Collection Password</label>
+                        <input type="text" id="collection-password" required placeholder="Enter 6-digit password"
+                            pattern="[0-9]{6}" maxlength="6" inputmode="numeric">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancel-collection-btn" class="btn btn-secondary">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Verify & Collect</button>
+                    </div>
+                </form>
+                <div id="collection-result" class="scanner-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
